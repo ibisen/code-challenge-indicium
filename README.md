@@ -1,7 +1,7 @@
-﻿
 # Indicium code-challenge Solution by Ibisen de Brito Gonçalves
 
 Create an ETL process that extracts data every day from two different sources and writes the data first to a local disk, and after to a database. 
+![Northwind database schema](https://user-images.githubusercontent.com/49417424/105997621-9666b980-608a-11eb-86fd-db6b44ece02a.png)
 
 More info about this test can be found at: https://github.com/techindicium/code-challenge
 
@@ -26,35 +26,8 @@ import  pandas  as  pd
 import  os
 import  sys
 
-date = sys.argv[1][:10]
+...
 
-#PostgreSQL Connection
-host = "postgres-container-indicium"
-database = "northwind"
-user = "northwind_user"
-password = "thewindisblowing"
-  
-db_conn = psycopg2.connect(host=host,database = database, user = user, password = password)
-db_cursor = db_conn.cursor()
-
-def  get_table_names(db_cursor):
-	table_names = []
-	db_cursor.execute("""SELECT table_name FROM information_schema.tables
-	WHERE table_schema = 'public'""")
-	for  name  in  db_cursor.fetchall():
-		table_names.append(name[0])
-	return  table_names
- 
-def  csv_export(db_cursor,table_name,date):
-	select = """SELECT * FROM {0}""".format(table_name)
-	SQL_for_file_output = "COPY ({0}) TO STDOUT WITH CSV HEADER".format(select)
-	path_file = "/data/postgres/{0}/{1}/data.csv".format(table_name,date)
-	os.makedirs(os.path.dirname(path_file), exist_ok = True)
-	with  open(path_file, 'w') as  f_output:
-		db_cursor.copy_expert(SQL_for_file_output, f_output)
-
-for  table_name  in  get_table_names(db_cursor):
-	csv_export(db_cursor,table_name,date)
 ``` 
 **Task 2:** Duplicate the CSV file and save it to the local file system, specifying a path for each source, table, and execution day. 
 ```python
@@ -96,19 +69,7 @@ customers = customers[['customer_id','company_name']].set_index('customer_id')
 orders = orders.join(customers, on = 'customer_id')
 order_details = order_details.join(products, on = 'product_id')
 
-data = []
-for  order_id  in  order_details.order_id.unique():
-	json = order_details[order_details.order_id == order_id].drop("order_id", axis = 1).to_dict("records")
-	order = {
-		"order_id": order_id,
-		"order_date": orders.loc[order_id]['order_date'],
-		"company_name": orders.loc[order_id]['company_name'],
-		"products": json_order,
-		"db_execution_date": date
-		}
-	data.append(order)
-
-details = pd.DataFrame(data).to_dict("records")
+...
 
 # Load the data to a MongoDB Database
 client = MongoClient('mongo-container', 27017, username='mongo', password = 'mongo1234')
@@ -146,21 +107,7 @@ default_args=default_args
 	cd $AIRFLOW_HOME/dags/tasks/
 	python3 task1.py {{ execution_date }}
 	""")
-	tsk2 = BashOperator(
-	task_id='task2',
-	bash_command="""
-	cd $AIRFLOW_HOME/dags/tasks/
-	python3 task2.py {{ execution_date }}
-	""")
-
-	tsk3 = BashOperator(
-	task_id='task3',
-	bash_command="""
-	cd $AIRFLOW_HOME/dags/tasks/
-	python3 task3.py {{ execution_date }}
-	""")
-
-[tsk1,tsk2] >> tsk3
+	...
 ```
 ## Setup of the Solution
 
